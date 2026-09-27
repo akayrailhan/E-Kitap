@@ -1,9 +1,11 @@
 using EBook.Application.Abstractions.Persistence;
+using EBook.Application.Abstractions.Documents;
 using EBook.Application.Abstractions.Storage;
 using EBook.Application.Books.Upload;
 using EBook.Application.Books.Status;
 using EBook.Infrastructure.Persistence;
 using EBook.Infrastructure.Storage;
+using EBook.Infrastructure.Documents;
 using DotNetEnv;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,6 +22,8 @@ builder.Services.AddDbContext<EBookDbContext>(options =>
 builder.Services.AddScoped<IBookRepository, EfBookRepository>();
 builder.Services.AddScoped<IBookUploadService, BookUploadService>();
 builder.Services.AddScoped<IBookStatusService, BookStatusService>();
+builder.Services.AddSingleton<IDocumentReader, OpenXmlDocumentReader>();
+builder.Services.AddSingleton<IContactSanitizer, ContactSanitizer>();
 builder.Services.AddSingleton<IFileStorage>(serviceProvider =>
 {
     var environment = serviceProvider.GetRequiredService<IWebHostEnvironment>();
