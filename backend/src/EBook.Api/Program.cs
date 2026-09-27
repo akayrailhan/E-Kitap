@@ -3,7 +3,14 @@ using EBook.Application.Abstractions.Storage;
 using EBook.Application.Books.Upload;
 using EBook.Infrastructure.Persistence;
 using EBook.Infrastructure.Storage;
+using DotNetEnv;
 using Microsoft.EntityFrameworkCore;
+
+var envFilePath = FindEnvironmentFile(Directory.GetCurrentDirectory());
+if (envFilePath is not null)
+{
+    Env.Load(envFilePath);
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,3 +46,21 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+static string? FindEnvironmentFile(string startDirectory)
+{
+    var directory = new DirectoryInfo(startDirectory);
+
+    while (directory is not null)
+    {
+        var environmentFilePath = Path.Combine(directory.FullName, ".env");
+        if (File.Exists(environmentFilePath))
+        {
+            return environmentFilePath;
+        }
+
+        directory = directory.Parent;
+    }
+
+    return null;
+}

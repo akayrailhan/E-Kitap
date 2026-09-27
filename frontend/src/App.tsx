@@ -1,121 +1,92 @@
 import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [bookName, setBookName] = useState('')
+  const [files, setFiles] = useState<File[]>([])
+
+  const handleFiles = (selectedFiles: FileList | null) => {
+    if (!selectedFiles) {
+      return
+    }
+
+    setFiles(Array.from(selectedFiles))
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
+    <main className="workspace">
+      <header className="topbar">
+        <div className="brand-mark" aria-hidden="true">E</div>
         <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
+          <p className="eyebrow">ETKİNLİK YAYIN AKIŞI</p>
+          <h1>E-Kitap oluştur</h1>
         </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
+        <span className="draft-status">Taslak</span>
+      </header>
+
+      <section className="intro">
+        <p className="eyebrow">YENİ KİTAP</p>
+        <h2>On bildiriyi tek bir yayına dönüştür.</h2>
+        <p className="intro-copy">
+          Kitap adını belirle, bildirileri sıralı şekilde ekle. PDF üretimi başladığında içerik ve sayfa düzeni korunur.
+        </p>
+      </section>
+
+      <section className="editor-grid" aria-label="Kitap oluşturma alanı">
+        <div className="form-panel">
+          <label htmlFor="book-name">Kitap adı</label>
+          <input
+            id="book-name"
+            type="text"
+            value={bookName}
+            onChange={(event) => setBookName(event.target.value)}
+            placeholder="Örn. 2026 Bilimsel Araştırmalar"
+          />
+
+          <label className="upload-label" htmlFor="papers">
+            <span className="upload-icon" aria-hidden="true">+</span>
+            <span>
+              <strong>Word bildirilerini ekle</strong>
+              <small>Yalnızca .docx · Tam 10 dosya</small>
+            </span>
+          </label>
+          <input
+            id="papers"
+            className="visually-hidden"
+            type="file"
+            accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            multiple
+            onChange={(event) => handleFiles(event.target.files)}
+          />
+        </div>
+
+        <aside className="summary-panel">
+          <div className="summary-heading">
+            <span>Bildiri sırası</span>
+            <strong>{files.length} / 10</strong>
+          </div>
+          {files.length === 0 ? (
+            <p className="empty-state">Dosyalar eklendiğinde burada yükleme sırasıyla görünecek.</p>
+          ) : (
+            <ol className="file-list">
+              {files.map((file, index) => (
+                <li key={`${file.name}-${file.lastModified}`}>
+                  <span>{String(index + 1).padStart(2, '0')}</span>
+                  <b>{file.name}</b>
+                </li>
+              ))}
+            </ol>
+          )}
+        </aside>
+      </section>
+
+      <footer className="workspace-footer">
+        <span>PDF üretimi, 10 bildiri tamamlandığında kullanılabilir olacak.</span>
+        <button type="button" disabled={!bookName.trim() || files.length !== 10}>
+          Kitabı oluştur
         </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      </footer>
+    </main>
   )
 }
 

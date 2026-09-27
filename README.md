@@ -30,15 +30,17 @@ docker-compose.yml
 Gereksinimler: .NET 8 SDK veya üzeri, Node.js 20 veya üzeri, npm ve Docker Desktop.
 
 ```powershell
+Copy-Item .env.example .env
 docker compose up -d
- dotnet build backend/EBook.sln
- Push-Location frontend
- npm install
- npm run build
- Pop-Location
+dotnet restore backend/EBook.sln
+dotnet build backend/EBook.sln
+Push-Location frontend
+npm install
+npm run build
+Pop-Location
 ```
 
-MSSQL connection string ve Supabase ayarları ilerleyen aşamalarda `backend/src/EBook.Api/appsettings.Development.json` veya user secrets ile sağlanacaktır. Secret değerleri repoya eklenmez; `.env.example` dosyaları yalnızca değişken adlarını gösterir.
+Clone eden geliştirici root `.env.example` dosyasını `.env` olarak kopyalayıp local MSSQL parolasını ve Supabase proje değerlerini kendi ortamına göre doldurmalıdır. Root `.env` dosyası Docker Compose ve ASP.NET Core backend tarafından okunur; gerçek secret değerleri Git’e eklenmez. Frontend için Supabase değerleri `frontend/.env.example` dosyasından `frontend/.env.local` dosyasına kopyalanır.
 
 ## Saklama yaklaşımı
 
@@ -60,4 +62,4 @@ MSSQL connection string ve Supabase ayarları ilerleyen aşamalarda `backend/src
 
 ## AI kullanımı
 
-Proje geliştirme sürecinde yapay zekâ aracı mimari seçenekleri değerlendirmek, boilerplate oluşturmak, kod yazmak, test senaryoları önermek ve dokümantasyon hazırlamak için kullanılmaktadır. Üretilen kod proje gereksinimleri, build çıktıları ve testlerle doğrulanacaktır. Nihai tasarım kararları ve entegrasyon kontrolleri proje geliştiricisi tarafından gözden geçirilecektir.
+Ben bu projeyi geliştirirken yapay zekâ aracından mimari seçenekleri değerlendirmek, başlangıç kodlarını oluşturmak, bazı fonksiyonları geliştirmek, test senaryoları önermek ve dokümantasyon hazırlamak için yararlandım. Buna rağmen Clean Architecture sınırları, kullanılacak kütüphaneler, veri modeli ve iş akışıyla ilgili kararları ben verdim. Üretilen kodu build, migration, çalışma zamanı kontrolleri ve gereksinimler üzerinden denetledim; gerekli gördüğüm yerlerde fonksiyonlar ve mimari üzerinde değişiklikler yaptım. Son uygulama kararlarının, entegrasyon kontrollerinin ve teslim edilen kodun sorumluluğu bana aittir.
