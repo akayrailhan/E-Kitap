@@ -26,4 +26,18 @@ public sealed class Paper
     public int Order { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
     public Book Book { get; private set; } = null!;
+
+    public void SetTitle(string title)
+    {
+        var resolvedTitle = string.IsNullOrWhiteSpace(title)
+            ? Path.GetFileNameWithoutExtension(OriginalFileName)
+            : title.Trim();
+
+        if (resolvedTitle.Length > 500)
+        {
+            resolvedTitle = resolvedTitle[..500];
+        }
+
+        Title = resolvedTitle;
+    }
 }

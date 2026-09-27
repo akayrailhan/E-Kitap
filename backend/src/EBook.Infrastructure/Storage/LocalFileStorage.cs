@@ -37,6 +37,26 @@ public sealed class LocalFileStorage(string rootPath) : IFileStorage
         return Path.Combine(relativeDirectory, "ebook.pdf").Replace(Path.DirectorySeparatorChar, '/');
     }
 
+    public Task<Stream> OpenReadAsync(string relativePath, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var fullPath = GetFullPath(relativePath);
+        if (!File.Exists(fullPath))
+        {
+            throw new FileNotFoundException("File not found.", fullPath);
+        }
+
+        var stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        return Task.FromResult<Stream>(stream);
+    }
+
+    public Task<bool> ExistsAsync(string relativePath, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var fullPath = GetFullPath(relativePath);
+        return Task.FromResult(File.Exists(fullPath));
+    }
+
     public Task DeleteBookAsync(Guid bookId, CancellationToken cancellationToken)
     {
         var directory = Path.Combine(rootPath, bookId.ToString("N"));
@@ -46,5 +66,19 @@ public sealed class LocalFileStorage(string rootPath) : IFileStorage
         }
 
         return Task.CompletedTask;
+    }
+
+    private string GetFullPath(string relativePath)
+    {
+        var normalized = relativePath.Replace('/', Path.DirectorySeparatorChar)
+                                     .Replace('\\', Path.DirectorySeparatorChar);
+
+        var prefix = $"uploads{Path.DirectorySeparatorChar}";
+        if (normalized.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        {
+            normalized = normalized[prefix.Length..];
+        }
+
+        return Path.GetFullPath(Path.Combine(rootPath, normalized));
     }
 }
