@@ -1,0 +1,4 @@
+{
+  "dotnet.defaultSolution": "backend/EBook.sln",
+  "omnisharp.defaultLaunchSolution": "backend/EBook.sln"
+}

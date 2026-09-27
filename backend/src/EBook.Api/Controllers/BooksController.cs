@@ -1,7 +1,10 @@
 using System.Security.Claims;
+using EBook.Application.Abstractions.Persistence;
+using EBook.Application.Abstractions.Storage;
 using EBook.Application.Books.Generation;
 using EBook.Application.Books.Status;
 using EBook.Application.Books.Upload;
+using EBook.Domain.Books;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EBook.Api.Controllers;
@@ -11,7 +14,9 @@ namespace EBook.Api.Controllers;
 public sealed class BooksController(
     IBookUploadService bookUploadService,
     IBookStatusService bookStatusService,
-    IBookGenerationService bookGenerationService) : ControllerBase
+    IBookGenerationService bookGenerationService,
+    IBookRepository bookRepository,
+    IFileStorage fileStorage) : ControllerBase
 {
     /// <summary>Returns the current generation state and ordered papers for a book.</summary>
     [HttpGet("{id:guid}")]
@@ -88,6 +93,52 @@ public sealed class BooksController(
         {
             return BadRequest(new { message = exception.Message });
         }
+    }
+
+    /// <summary>Streams or downloads the generated e-book PDF.</summary>
+    [HttpGet("{id:guid}/pdf")]
+    public async Task<IActionResult> GetPdf(
+        Guid id,
+        [FromQuery] bool download,
+        CancellationToken cancellationToken)
+    {
+        var ownerUserId = GetOwnerUserId();
+
+        var book = await bookRepository.GetByIdAsync(id, ownerUserId, cancellationToken);
+        if (book is null)
+        {
+            return NotFound(new { message = $"Book with ID '{id}' was not found." });
+        }
+
+        if (book.Status != BookStatus.Completed || string.IsNullOrWhiteSpace(book.PdfPath))
+        {
+            return BadRequest(new
+            {
+                message = book.Status switch
+                {
+                    BookStatus.Processing => "E-Book is currently being generated. Please wait.",
+                    BookStatus.Failed => $"E-Book generation failed: {book.ErrorMessage}",
+                    _ => "E-Book generation has not been initiated."
+                }
+            });
+        }
+
+        var pdfPath = book.PdfPath!;
+        if (!await fileStorage.ExistsAsync(pdfPath, cancellationToken))
+        {
+            return NotFound(new { message = "Generated PDF file could not be found." });
+        }
+
+        var stream = await fileStorage.OpenReadAsync(pdfPath, cancellationToken);
+        var downloadFileName = $"{book.Name}.pdf";
+
+        if (download)
+        {
+            return File(stream, "application/pdf", downloadFileName, enableRangeProcessing: true);
+        }
+
+        Response.Headers.Append("Content-Disposition", $"inline; filename=\"{Uri.EscapeDataString(downloadFileName)}\"");
+        return File(stream, "application/pdf", enableRangeProcessing: true);
     }
 
     private string GetOwnerUserId() =>
