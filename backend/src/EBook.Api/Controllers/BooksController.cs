@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using EBook.Application.Books.Generation;
 using EBook.Application.Books.Status;
 using EBook.Application.Books.Upload;
 using Microsoft.AspNetCore.Mvc;
@@ -9,7 +10,8 @@ namespace EBook.Api.Controllers;
 [Route("api/books")]
 public sealed class BooksController(
     IBookUploadService bookUploadService,
-    IBookStatusService bookStatusService) : ControllerBase
+    IBookStatusService bookStatusService,
+    IBookGenerationService bookGenerationService) : ControllerBase
 {
     /// <summary>Returns the current generation state and ordered papers for a book.</summary>
     [HttpGet("{id:guid}")]
@@ -17,10 +19,7 @@ public sealed class BooksController(
         Guid id,
         CancellationToken cancellationToken)
     {
-        var ownerUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? User.FindFirstValue("sub")
-            ?? "development-user";
-
+        var ownerUserId = GetOwnerUserId();
         var result = await bookStatusService.GetAsync(id, ownerUserId, cancellationToken);
         return result is null ? NotFound() : Ok(result);
     }
@@ -34,9 +33,7 @@ public sealed class BooksController(
         [FromForm] List<IFormFile> papers,
         CancellationToken cancellationToken)
     {
-        var ownerUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? User.FindFirstValue("sub")
-            ?? "development-user";
+        var ownerUserId = GetOwnerUserId();
 
         var uploadedPapers = papers
             .Select(paper => new UploadedPaper(paper.OpenReadStream(), paper.FileName))
@@ -68,4 +65,33 @@ public sealed class BooksController(
             }
         }
     }
+
+    /// <summary>Starts generating the e-book PDF from uploaded papers.</summary>
+    [HttpPost("{id:guid}/create")]
+    public async Task<ActionResult<BookStatusResult>> Create(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var ownerUserId = GetOwnerUserId();
+
+        try
+        {
+            var result = await bookGenerationService.StartGenerationAsync(id, ownerUserId, cancellationToken);
+            if (result is null)
+            {
+                return NotFound(new { message = $"Book with ID '{id}' was not found." });
+            }
+
+            return Accepted($"/api/books/{id}", result);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return BadRequest(new { message = exception.Message });
+        }
+    }
+
+    private string GetOwnerUserId() =>
+        User.FindFirstValue(ClaimTypes.NameIdentifier)
+        ?? User.FindFirstValue("sub")
+        ?? "development-user";
 }
