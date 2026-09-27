@@ -26,3 +26,10 @@ build/
 __pycache__/
 .venv/
 venv/
+
+# .NET build output
+**/bin/
+**/obj/
+
+# Runtime file storage
+backend/src/EBook.Api/wwwroot/uploads/
