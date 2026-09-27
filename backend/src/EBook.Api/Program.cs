@@ -8,6 +8,7 @@ using EBook.Infrastructure.Storage;
 using EBook.Infrastructure.Documents;
 using DotNetEnv;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Infrastructure;
 
 var envFilePath = FindEnvironmentFile(Directory.GetCurrentDirectory());
 if (envFilePath is not null)
@@ -17,6 +18,8 @@ if (envFilePath is not null)
 
 var builder = WebApplication.CreateBuilder(args);
 
+QuestPDF.Settings.License = LicenseType.Community;
+
 builder.Services.AddDbContext<EBookDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<IBookRepository, EfBookRepository>();
@@ -24,6 +27,7 @@ builder.Services.AddScoped<IBookUploadService, BookUploadService>();
 builder.Services.AddScoped<IBookStatusService, BookStatusService>();
 builder.Services.AddSingleton<IDocumentReader, OpenXmlDocumentReader>();
 builder.Services.AddSingleton<IContactSanitizer, ContactSanitizer>();
+builder.Services.AddSingleton<IBookPdfGenerator, QuestPdfBookGenerator>();
 builder.Services.AddSingleton<IFileStorage>(serviceProvider =>
 {
     var environment = serviceProvider.GetRequiredService<IWebHostEnvironment>();

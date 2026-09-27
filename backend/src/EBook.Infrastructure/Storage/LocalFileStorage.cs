@@ -24,6 +24,19 @@ public sealed class LocalFileStorage(string rootPath) : IFileStorage
         return Path.Combine(relativeDirectory, storedFileName).Replace(Path.DirectorySeparatorChar, '/');
     }
 
+    public async Task<string> SavePdfAsync(Guid bookId, Stream content, CancellationToken cancellationToken)
+    {
+        var relativeDirectory = Path.Combine("uploads", bookId.ToString("N"));
+        var absoluteDirectory = Path.Combine(rootPath, bookId.ToString("N"));
+        Directory.CreateDirectory(absoluteDirectory);
+
+        var absolutePath = Path.Combine(absoluteDirectory, "ebook.pdf");
+        await using var output = new FileStream(absolutePath, FileMode.Create, FileAccess.Write, FileShare.None);
+        await content.CopyToAsync(output, cancellationToken);
+
+        return Path.Combine(relativeDirectory, "ebook.pdf").Replace(Path.DirectorySeparatorChar, '/');
+    }
+
     public Task DeleteBookAsync(Guid bookId, CancellationToken cancellationToken)
     {
         var directory = Path.Combine(rootPath, bookId.ToString("N"));
