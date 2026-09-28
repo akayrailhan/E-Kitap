@@ -16,9 +16,13 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="DocumentFormat.OpenXml" Version="3.1.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\EBook.Application\EBook.Application.csproj" />
+    <ProjectReference Include="..\..\src\EBook.Domain\EBook.Domain.csproj" />
     <ProjectReference Include="..\..\src\EBook.Infrastructure\EBook.Infrastructure.csproj" />
   </ItemGroup>
 
