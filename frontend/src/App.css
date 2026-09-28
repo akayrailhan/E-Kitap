@@ -402,12 +402,17 @@ input[type='text']::placeholder {
 }
 
 .btn-icon {
-    padding: 4px 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    min-height: 24px;
+    padding: 3px 5px;
     color: var(--muted);
     background: transparent;
     border: 1px solid var(--line);
     border-radius: 2px;
-    font-size: 10px;
+    font-size: 11px;
     cursor: pointer;
     line-height: 1;
 }
@@ -855,5 +860,66 @@ button {
         width: 100%;
         text-align: center;
         justify-content: center;
+    }
+}
+
+@media (max-width: 600px) {
+    .workspace {
+        width: calc(100% - 24px);
+        padding-top: 16px;
+    }
+
+    .brand-mark {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+        margin-right: 12px;
+    }
+
+    .topbar h1 {
+        font-size: 18px;
+    }
+
+    .topbar {
+        gap: 10px;
+    }
+
+    .upload-dropzone {
+        padding: 24px 14px;
+    }
+
+    .upload-label span strong {
+        font-size: 14px;
+    }
+
+    .loading-card {
+        padding: 28px 18px;
+        margin: 20px auto;
+    }
+
+    .loading-header {
+        gap: 14px;
+    }
+
+    .loading-header h2 {
+        font-size: 22px;
+    }
+
+    .failed-view {
+        padding: 32px 18px;
+        margin: 24px auto;
+    }
+
+    .failed-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .failed-actions button {
+        width: 100%;
+    }
+
+    .pdf-frame-container {
+        height: 420px;
     }
 }
