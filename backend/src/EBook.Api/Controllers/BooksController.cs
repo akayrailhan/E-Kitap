@@ -18,6 +18,26 @@ public sealed class BooksController(
     IBookRepository bookRepository,
     IFileStorage fileStorage) : ControllerBase
 {
+    /// <summary>Lists all books belonging to the current user.</summary>
+    [HttpGet]
+    public async Task<ActionResult<IReadOnlyList<BookListItemResult>>> List(CancellationToken cancellationToken)
+    {
+        var ownerUserId = GetOwnerUserId();
+        var books = await bookRepository.ListByOwnerUserIdAsync(ownerUserId, cancellationToken);
+        var results = books.Select(book => new BookListItemResult(
+            book.Id,
+            book.Name,
+            book.Status,
+            book.CreatedAt,
+            book.CompletedAt,
+            book.PdfPath,
+            book.Papers.Count,
+            book.ErrorMessage
+        )).ToList();
+
+        return Ok(results);
+    }
+
     /// <summary>Returns the current generation state and ordered papers for a book.</summary>
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<BookStatusResult>> GetStatus(

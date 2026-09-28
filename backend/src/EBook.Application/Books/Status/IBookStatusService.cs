@@ -25,3 +25,14 @@ public sealed record PaperStatusResult(
     string OriginalFileName,
     string? Title,
     int Order);
+
+/// <summary>Represents a book in the user's book history list.</summary>
+public sealed record BookListItemResult(
+    Guid BookId,
+    string Name,
+    BookStatus Status,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset? CompletedAt,
+    string? PdfPath,
+    int PaperCount,
+    string? ErrorMessage = null);

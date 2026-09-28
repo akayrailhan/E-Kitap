@@ -120,6 +120,12 @@ public sealed class BookGenerationServiceTests
             return Task.FromResult<Book?>(_book.Id == bookId && _book.OwnerUserId == ownerUserId ? _book : null);
         }
 
+        public Task<IReadOnlyList<Book>> ListByOwnerUserIdAsync(string ownerUserId, CancellationToken cancellationToken)
+        {
+            IReadOnlyList<Book> list = _book.OwnerUserId == ownerUserId ? [_book] : [];
+            return Task.FromResult(list);
+        }
+
         public Task AddAsync(Book book, CancellationToken cancellationToken) => Task.CompletedTask;
 
         public Task SaveChangesAsync(CancellationToken cancellationToken) => Task.CompletedTask;

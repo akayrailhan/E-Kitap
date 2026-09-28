@@ -69,6 +69,24 @@ export async function getBookStatus(bookId: string): Promise<BookStatusData> {
   return response.json()
 }
 
+export async function getMyBooks(): Promise<import('../types/book').BookListItem[]> {
+  const authHeaders = await getAuthHeaders()
+
+  const response = await fetch('/api/books', {
+    headers: authHeaders,
+  })
+
+  if (!response.ok) {
+    if (response.status === 502) {
+      throw new Error("Backend API sunucusuna ulaşılamadı (502 Bad Gateway).")
+    }
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(errorData.message || `Kitap listesi alınamadı (${response.status})`)
+  }
+
+  return response.json()
+}
+
 export function getPdfUrl(bookId: string): string {
   return `/api/books/${bookId}/pdf`
 }

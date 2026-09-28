@@ -26,6 +26,17 @@ export interface BookUploadResponse {
   }[]
 }
 
+export interface BookListItem {
+  bookId: string
+  name: string
+  status: BookStatus
+  createdAt: string
+  completedAt?: string | null
+  pdfPath?: string | null
+  paperCount: number
+  errorMessage?: string | null
+}
+
 export type AppStep = 'draft' | 'uploading' | 'processing' | 'completed' | 'failed'
 
 export interface LoadingStage {

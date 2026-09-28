@@ -6,6 +6,7 @@ import {
   FileList,
   Header,
   LoadingProgress,
+  MyBooksModal,
   PdfViewer,
 } from './components'
 import { createBookPdf, getBookStatus, uploadBook } from './services/bookApi'
@@ -20,6 +21,7 @@ function App() {
   const [error, setError] = useState<string | null>(null)
   const [progressPercent, setProgressPercent] = useState<number>(0)
   const [stageIndex, setStageIndex] = useState<number>(0)
+  const [isMyBooksOpen, setIsMyBooksOpen] = useState(false)
 
   const pollIntervalRef = useRef<number | null>(null)
 
@@ -176,9 +178,31 @@ function App() {
     setStageIndex(0)
   }
 
+  const handleSelectMyBook = async (bookId: string) => {
+    try {
+      const data = await getBookStatus(bookId)
+      setCurrentBookId(bookId)
+      setBookData(data)
+      setBookName(data.name)
+      const isCompleted = data.status === 'Completed' || data.status === 2
+      if (isCompleted) {
+        setAppStep('completed')
+      } else {
+        setAppStep('processing')
+        startPolling(bookId)
+      }
+    } catch (err: unknown) {
+      console.error(err)
+      setError('Seçilen kitap bilgileri yüklenemedi.')
+    }
+  }
+
   return (
     <main className="workspace">
-      <Header appStep={appStep} />
+      <Header
+        appStep={appStep}
+        onOpenMyBooks={() => setIsMyBooksOpen(true)}
+      />
 
       {/* DRAFT STATE: BOOK FORM & FILE LIST */}
       {appStep === 'draft' && (
@@ -266,6 +290,13 @@ function App() {
           onReset={handleNewBook}
         />
       )}
+
+      {/* MY BOOKS HISTORY MODAL */}
+      <MyBooksModal
+        isOpen={isMyBooksOpen}
+        onClose={() => setIsMyBooksOpen(false)}
+        onSelectBook={handleSelectMyBook}
+      />
     </main>
   )
 }

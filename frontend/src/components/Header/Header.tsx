@@ -5,9 +5,10 @@ import { AuthModal } from '../AuthModal'
 
 export interface HeaderProps {
   appStep: AppStep
+  onOpenMyBooks?: () => void
 }
 
-export function Header({ appStep }: HeaderProps) {
+export function Header({ appStep, onOpenMyBooks }: HeaderProps) {
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
 
@@ -64,6 +65,17 @@ export function Header({ appStep }: HeaderProps) {
         </div>
 
         <div className="topbar-actions">
+          {onOpenMyBooks && userEmail && (
+            <button
+              type="button"
+              className="btn-my-books"
+              onClick={onOpenMyBooks}
+              title="Geçmişte oluşturduğunuz kitapları görüntüleyin"
+            >
+              📚 Kitaplarım
+            </button>
+          )}
+
           <span className={`status-badge status-${appStep}`}>{getBadgeLabel()}</span>
 
           <div className="auth-status">
