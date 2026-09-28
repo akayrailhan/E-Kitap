@@ -28,6 +28,7 @@ Aynı etkinliğe ait tam 10 adet Word (.docx) bildirisini tek bir PDF e-kitaba d
 | **Word İşleme** | DocumentFormat.OpenXml (Open XML SDK) | Orijinal dosyalara zarar vermeden metin ve paragraf çıkarma |
 | **PDF Motoru** | QuestPDF Community | Kapak, dinamik sayfa numaralı İçindekiler (TOC) ve mizanpaj |
 | **Frontend** | React 18, TypeScript, Vite | Modüler mimari, responsive (mobil & masaüstü) arayüz |
+| **Kimlik Doğrulama** | Supabase Auth (Opsiyonel Bonus) | JWT Bearer desteği, misafir (guest) modu ve demo hesabı |
 | **Test** | xUnit, Moq, FluentAssertions | Generation servisi durum geçişleri ve doğrulama testleri |
 
 ---
@@ -60,7 +61,7 @@ Vaka kuralı doğrultusunda **yalnızca iki ana tablo** tasarlanmış ve aralar�
 | :--- | :--- | :--- |
 | `Id` | `UNIQUEIDENTIFIER` (PK) | Kitabın benzersiz kimliği (`Guid.NewGuid()`) |
 | `Name` | `NVARCHAR(200)` | Kitabın başlığı |
-| `OwnerUserId`| `NVARCHAR(200)` | Kullanıcı kimliği (kimlik doğrulaması yoksa `"development-user"`) |
+| `OwnerUserId`| `NVARCHAR(200)` | Kullanıcı kimliği (Giriş yapanın Supabase `sub` UUID'si; misafir için `"guest-anonymous"`) |
 | `Status` | `NVARCHAR(20)` | Durum takibi: `Draft`, `Processing`, `Completed`, `Failed` |
 | `PdfPath` | `NVARCHAR(500)` | Üretilen nihai PDF dosyasının göreceli yolu |
 | `CreatedAt` | `DATETIMEOFFSET` | Oluşturulma tarihi |
@@ -120,7 +121,7 @@ backend/src/EBook.Api/wwwroot/uploads/
    - **Kapak Sayfası:** Kitap adı ve alt başlık mizanpajı.
    - **İçindekiler (TOC):** Her bildirinin başlığı ve dinamik bölüm bağlantısı (`SectionLink`).
    - **Gerçek Sayfa Numaraları:** QuestPDF'in `BeginPageNumberOfSection` motoru sayesinde içindekiler tablosundaki her başlık, bildirinin başladığı gerçek sayfa numarasıyla eşleşir.
-   - **Tutarlı Numaralandırma:** Tüm sayfalarda `"Sayfa X"` formatında tutarlı footer numaralandırması yer alır.
+   - **Tutarlı Numaralandırma:** Tüm sayfalarda yalın ve tutarlı sayfa numarası (`1`, `2`, `3`...) alt bilgi olarak yer alır.
 
 ---
 
@@ -131,6 +132,7 @@ backend/src/EBook.Api/wwwroot/uploads/
 | `POST` | `/api/books` | Kitap adı ve 10 `.docx` dosyasını yükler, taslak kaydı açar. | `201 Created` |
 | `POST` | `/api/books/{id}/create` | PDF üretim sürecini başlatır (Arka planda veya eşzamanlı). | `202 Accepted` |
 | `GET` | `/api/books/{id}` | Kitabın güncel durumunu (`Status`, `Papers`, `ErrorMessage`) döner. | `200 OK` |
+| `GET` | `/api/books` | Giriş yapmış kullanıcının oluşturduğu kitap geçmişini listeler. | `200 OK` |
 | `GET` | `/api/books/{id}/pdf` | Üretilen PDF'i tarayıcıda önizlemek için akış (stream) olarak döner. | `200 OK (application/pdf)` |
 | `GET` | `/api/books/{id}/pdf?download=true` | PDF'i doğrudan bilgisayara dosya eki olarak indirir. | `200 OK (attachment)` |
 
@@ -149,6 +151,12 @@ React, TypeScript ve Vite ile geliştirilen kullanıcı arayüzü; masaüstü, t
   - Tarayıcı içi gömülü `iframe` ile indirmeden doğrudan okuma.
   - Tek tıkla yerel cihaza PDF indirme ve yeni sekmede açma.
   - Yan panelde tıklanabilir İçindekiler Listesi.
+- **📚 Kitaplarım & Kullanıcı İzolasyonu:**
+  - Giriş yapan kullanıcılar, sadece kendilerinin oluşturduğu e-kitapları geçmiş modalında listeleyebilir, durumlarını inceleyebilir ve tek tıkla yeniden açabilir.
+  - Misafir kullanıcıların veya başka kullanıcıların oluşturduğu kitaplar gizli tutulur.
+- **Kimlik Doğrulama & Misafir Modu:**
+  - Case kuralları gereği kimlik doğrulama zorunlu değildir; varsayılan olarak "Misafir Modu"nda tüm özellikler eksiksiz çalışır.
+  - İsteğe bağlı olarak Supabase ile kayıt/giriş yapılabilir (`test@example.com` / `123456` hazır test hesabı entegredir).
 - **Hata Yönetimi:** Anlaşılır hata mesajları, tek tıkla yeniden deneme (`Retry`) ve yeni kitap başlatma desteği.
 
 ---
@@ -166,26 +174,58 @@ git clone https://github.com/akayrailhan/E-Kitap.git
 cd E-Kitap
 ```
 
-### 2. MSSQL Veritabanını Başlatın
+### 2. Ortam Değişkenlerini (.env) Hazırlayın
+Proje kök dizininde ve `frontend/` klasöründe hazır şablon `.env.example` dosyaları bulunmaktadır. Güvenlik amacıyla bu dosyalarda gerçek şifre yer almaz; değer alanlarındaki yönlendirmelere göre kendi değerlerinizi girmelisiniz:
+
+**a) Kök Dizin / Backend Yapılandırması:**
+Kök dizindeki `.env.example` dosyasını `.env` olarak kopyalayın:
+```bash
+# Windows PowerShell:
+Copy-Item .env.example .env
+
+# Bash / macOS / Linux:
+cp .env.example .env
+```
+Ardından oluşturulan `.env` dosyasını açıp değerleri düzenleyin:
+- `MSSQL_SA_PASSWORD`: `BURAYA_GUCLU_MSSQL_SIFRENIZI_YAZIN` yerine kendi belirleyeceğiniz güçlü bir şifre yazın (SQL Server en az 8 karakter, büyük harf, küçük harf, rakam ve sembol gerektirir; örn: `GucluSifre!2026`).
+- `ConnectionStrings__DefaultConnection`: `Password=` kısmına da aynı belirlediğiniz şifreyi yazın.
+- `Supabase__...`: Supabase kullanmayacaksanız bu satırları olduğu gibi bırakabilirsiniz.
+
+**b) Frontend Yapılandırması (İsteğe Bağlı - Supabase Auth):**
+```bash
+# Windows PowerShell:
+Copy-Item frontend/.env.example frontend/.env
+
+# Bash / macOS / Linux:
+cp frontend/.env.example frontend/.env
+```
+- Supabase kullanmak isterseniz `BURAYA_SUPABASE_PROJECT_ID_YAZIN` ve `BURAYA_SUPABASE_ANON_PUBLIC_KEY_YAZIN` alanlarına kendi Supabase panelinizden aldığınız değerleri yazın.
+- Supabase tanımlanmazsa uygulama hiçbir hata vermeden doğrudan **Misafir Modu**nda çalışmaya devam eder.
+
+### 3. MSSQL Veritabanını Başlatın
 ```bash
 docker compose up -d
 ```
-*(MSSQL konteyneri `localhost:1433` üzerinde ayağa kalkar).*
+*(MSSQL konteyneri `localhost:1433` portunda ayağa kalkar. Konteynerin ilk açılışta veritabanı motorunu hazır hale getirmesi yaklaşık 10-15 saniye sürer).*
 
-### 3. Backend'i Çalıştırın
+### 4. Backend'i Çalıştırın
 ```bash
 dotnet run --project backend/src/EBook.Api/EBook.Api.csproj --launch-profile http
 ```
-> **Not:** Uygulama açılışında veritabanı migration'ları otomatik olarak uygulanır. Swagger dokümantasyonuna `http://localhost:5290/swagger` adresinden erişebilirsiniz.
+> **Not:** Uygulama açılışında veritabanı migration'ları otomatik olarak uygulanır (`EBookDbContext.Database.MigrateAsync`). Swagger arayüzüne `http://localhost:5290/swagger` adresinden erişebilirsiniz.
 
-### 4. Frontend'i Çalıştırın
-Yeni bir terminalde:
+### 5. Frontend'i Çalıştırın
+Yeni bir terminal açarak:
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 Tarayıcınızda **`http://localhost:5173`** adresini açarak uygulamayı kullanmaya başlayabilirsiniz.
+
+> 💡 **Hızlı Test / Demo Hesabı:**
+> - Misafir olarak doğrudan kitap adı girip 10 adet `.docx` dosyası yükleyebilir ve PDF üretebilirsiniz.
+> - Kullanıcı girişini ve "Kitaplarım" geçmişi deneyimini test etmek için üstteki **"Giriş Yap / Kayıt Ol"** butonuna basıp **"Demo Bilgilerini Doldur"** butonuna tıklayabilir (`test@example.com` / `123456`) veya kendi hesabınızı oluşturabilirsiniz.
 
 ---
 
