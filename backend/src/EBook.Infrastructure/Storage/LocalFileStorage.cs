@@ -18,7 +18,7 @@ public sealed class LocalFileStorage(string rootPath) : IFileStorage
 
         var storedFileName = $"{order:D2}-{safeFileName}";
         var absolutePath = Path.Combine(absoluteDirectory, storedFileName);
-        await using var output = new FileStream(absolutePath, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+        await using var output = new FileStream(absolutePath, FileMode.Create, FileAccess.Write, FileShare.None);
         await content.CopyToAsync(output, cancellationToken);
 
         return Path.Combine(relativeDirectory, storedFileName).Replace(Path.DirectorySeparatorChar, '/');

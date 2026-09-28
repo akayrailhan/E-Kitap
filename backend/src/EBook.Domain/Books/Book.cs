@@ -8,6 +8,7 @@ public sealed class Book
 
     public Book(string name, string ownerUserId)
     {
+        Id = Guid.NewGuid();
         Rename(name);
         OwnerUserId = string.IsNullOrWhiteSpace(ownerUserId)
             ? throw new ArgumentException("Owner user id is required.", nameof(ownerUserId))

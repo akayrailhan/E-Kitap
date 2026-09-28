@@ -16,6 +16,26 @@ public sealed class QuestPdfBookGenerator : IBookPdfGenerator
 
         Document.Create(document =>
         {
+            // Cover page
+            document.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.Margin(48);
+                page.DefaultTextStyle(style => style.FontSize(10));
+
+                page.Content().AlignCenter().AlignMiddle().Column(cover =>
+                {
+                    cover.Item().Text(content.BookName).FontSize(28).Bold().FontColor("#333");
+                    cover.Item().PaddingTop(14).Text("Bildiri Kitabi").FontSize(14).FontColor("#666");
+                });
+
+                page.Footer().AlignCenter().Text(text =>
+                {
+                    text.CurrentPageNumber();
+                });
+            });
+
+            // Table of contents page
             document.Page(page =>
             {
                 page.Size(PageSizes.A4);
@@ -24,50 +44,57 @@ public sealed class QuestPdfBookGenerator : IBookPdfGenerator
 
                 page.Content().Column(column =>
                 {
-                    column.Item().AlignCenter().PaddingTop(170).Column(cover =>
-                    {
-                        cover.Item().Text(content.BookName).FontSize(30).Bold();
-                        cover.Item().PaddingTop(18).Text("Bildiri kitabı").FontSize(14);
-                    });
-
-                    column.Item().PageBreak();
-                    column.Item().Text("İçindekiler").FontSize(24).Bold();
-                    column.Item().PaddingTop(18).Column(tableOfContents =>
+                    column.Item().Text("Icindekiler").FontSize(22).Bold();
+                    column.Item().PaddingTop(16).Column(toc =>
                     {
                         foreach (var paper in content.Papers)
                         {
-                            tableOfContents.Item().Row(row =>
+                            toc.Item().PaddingBottom(6).Row(row =>
                             {
-                                row.AutoItem().SectionLink(paper.SectionId).Text(paper.Title);
-                                row.RelativeItem().PaddingHorizontal(8).AlignBottom().LineHorizontal(1);
-                                row.AutoItem().Text(text => text.BeginPageNumberOfSection(paper.SectionId));
+                                row.RelativeItem().SectionLink(paper.SectionId)
+                                    .Text(paper.Title).FontSize(11);
+                                row.ConstantItem(40).AlignRight()
+                                    .Text(text => text.BeginPageNumberOfSection(paper.SectionId));
                             });
                         }
                     });
-
-                    foreach (var paper in content.Papers)
-                    {
-                        column.Item().PageBreak();
-                        column.Item().Section(paper.SectionId).Column(section =>
-                        {
-                            section.Item().Text(paper.Title).FontSize(19).Bold();
-                            foreach (var paragraph in paper.Paragraphs)
-                            {
-                                if (!string.IsNullOrWhiteSpace(paragraph))
-                                {
-                                    section.Item().PaddingTop(8).Text(paragraph);
-                                }
-                            }
-                        });
-                    }
                 });
 
                 page.Footer().AlignCenter().Text(text =>
                 {
-                    text.Span("Sayfa ");
                     text.CurrentPageNumber();
                 });
             });
+
+            // Paper pages
+            foreach (var paper in content.Papers)
+            {
+                document.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+                    page.Margin(48);
+                    page.DefaultTextStyle(style => style.FontSize(10));
+
+                    page.Content().Section(paper.SectionId).Column(section =>
+                    {
+                        section.Item().Text(paper.Title).FontSize(18).Bold();
+                        section.Item().PaddingTop(12).LineHorizontal(1).LineColor("#ccc");
+                        foreach (var paragraph in paper.Paragraphs)
+                        {
+                            if (!string.IsNullOrWhiteSpace(paragraph))
+                            {
+                                section.Item().PaddingTop(8).Text(paragraph).FontSize(10).LineHeight(1.4f);
+                            }
+                        }
+                    });
+
+                    page.Footer().AlignCenter().Text(text =>
+                    {
+                        text.Span("Sayfa ");
+                        text.CurrentPageNumber();
+                    });
+                });
+            }
         }).GeneratePdf(output);
 
         return Task.CompletedTask;
