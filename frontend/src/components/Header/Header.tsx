@@ -53,6 +53,54 @@ export function Header({ appStep, onOpenMyBooks }: HeaderProps) {
 
   return (
     <>
+      {/* Top-right auth area */}
+      <div className="page-auth-corner">
+        {onOpenMyBooks && userEmail && (
+          <button
+            type="button"
+            className="btn-my-books"
+            onClick={onOpenMyBooks}
+            title="Geçmişte oluşturduğunuz kitapları görüntüleyin"
+          >
+            📚 Kitaplarım
+          </button>
+        )}
+
+        <div className="auth-status">
+          {userEmail ? (
+            <div className="user-profile">
+              <span className="user-avatar" title={userEmail}>
+                {userEmail.charAt(0).toUpperCase()}
+              </span>
+              <span className="user-email-text" title={userEmail}>
+                {userEmail}
+              </span>
+              <button
+                type="button"
+                className="btn-auth-action"
+                onClick={handleSignOut}
+                title="Çıkış yap"
+              >
+                Çıkış
+              </button>
+            </div>
+          ) : (
+            <div className="guest-profile">
+              <span className="guest-badge" title="Giriş yapmadan da tüm özellikleri kullanabilirsiniz">
+                Misafir
+              </span>
+              <button
+                type="button"
+                className="btn-auth-login"
+                onClick={() => setIsAuthModalOpen(true)}
+              >
+                Giriş Yap / Kayıt Ol
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
       <header className="topbar">
         <div className="brand-group">
           <div className="brand-mark" aria-hidden="true">
@@ -60,56 +108,10 @@ export function Header({ appStep, onOpenMyBooks }: HeaderProps) {
           </div>
           <div>
             <p className="eyebrow">ETKİNLİK YAYIN AKIŞI</p>
-            <h1>E-Kitap Oluşturucu</h1>
-          </div>
-        </div>
-
-        <div className="topbar-actions">
-          {onOpenMyBooks && userEmail && (
-            <button
-              type="button"
-              className="btn-my-books"
-              onClick={onOpenMyBooks}
-              title="Geçmişte oluşturduğunuz kitapları görüntüleyin"
-            >
-              📚 Kitaplarım
-            </button>
-          )}
-
-          <span className={`status-badge status-${appStep}`}>{getBadgeLabel()}</span>
-
-          <div className="auth-status">
-            {userEmail ? (
-              <div className="user-profile">
-                <span className="user-avatar" title={userEmail}>
-                  {userEmail.charAt(0).toUpperCase()}
-                </span>
-                <span className="user-email-text" title={userEmail}>
-                  {userEmail}
-                </span>
-                <button
-                  type="button"
-                  className="btn-auth-action"
-                  onClick={handleSignOut}
-                  title="Çıkış yap"
-                >
-                  Çıkış
-                </button>
-              </div>
-            ) : (
-              <div className="guest-profile">
-                <span className="guest-badge" title="Giriş yapmadan da tüm özellikleri kullanabilirsiniz">
-                  Misafir
-                </span>
-                <button
-                  type="button"
-                  className="btn-auth-login"
-                  onClick={() => setIsAuthModalOpen(true)}
-                >
-                  Giriş Yap / Kayıt Ol
-                </button>
-              </div>
-            )}
+            <div className="brand-title-row">
+              <h1>E-Kitap Oluşturucu</h1>
+              <span className={`status-badge status-${appStep}`}>{getBadgeLabel()}</span>
+            </div>
           </div>
         </div>
       </header>

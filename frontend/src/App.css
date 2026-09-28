@@ -16,7 +16,6 @@
 .topbar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 16px;
     border-bottom: 1px solid var(--line);
     padding-bottom: 24px;
@@ -27,10 +26,18 @@
     align-items: center;
 }
 
+.brand-title-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
 .topbar-actions {
     display: flex;
     align-items: center;
     gap: 14px;
+    margin-left: auto;
 }
 
 .brand-mark {
@@ -936,6 +943,27 @@ button {
 
     .pdf-frame-container {
         height: 420px;
+    }
+}
+
+/* TOP-RIGHT AUTH CORNER */
+.page-auth-corner {
+    position: absolute;
+    top: 20px;
+    right: 28px;
+    z-index: 900;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+@media (max-width: 600px) {
+    .page-auth-corner {
+        position: static;
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 12px;
+        padding-top: 4px;
     }
 }
 

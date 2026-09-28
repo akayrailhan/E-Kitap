@@ -90,7 +90,6 @@ public sealed class QuestPdfBookGenerator : IBookPdfGenerator
 
                     page.Footer().AlignCenter().Text(text =>
                     {
-                        text.Span("Sayfa ");
                         text.CurrentPageNumber();
                     });
                 });
