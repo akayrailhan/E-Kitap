@@ -6,6 +6,13 @@ namespace EBook.Infrastructure.Persistence;
 
 public sealed class EfBookRepository(EBookDbContext dbContext) : IBookRepository
 {
+    public Task<Book?> GetByIdAsync(Guid bookId, CancellationToken cancellationToken)
+    {
+        return dbContext.Books
+            .Include(book => book.Papers)
+            .SingleOrDefaultAsync(book => book.Id == bookId, cancellationToken);
+    }
+
     public Task<Book?> GetByIdAsync(Guid bookId, string ownerUserId, CancellationToken cancellationToken)
     {
         return dbContext.Books

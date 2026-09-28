@@ -23,6 +23,11 @@ public sealed class BooksController(
     public async Task<ActionResult<IReadOnlyList<BookListItemResult>>> List(CancellationToken cancellationToken)
     {
         var ownerUserId = GetOwnerUserId();
+        if (ownerUserId == "guest-anonymous")
+        {
+            return Ok(Array.Empty<BookListItemResult>());
+        }
+
         var books = await bookRepository.ListByOwnerUserIdAsync(ownerUserId, cancellationToken);
         var results = books.Select(book => new BookListItemResult(
             book.Id,
@@ -122,9 +127,7 @@ public sealed class BooksController(
         [FromQuery] bool download,
         CancellationToken cancellationToken)
     {
-        var ownerUserId = GetOwnerUserId();
-
-        var book = await bookRepository.GetByIdAsync(id, ownerUserId, cancellationToken);
+        var book = await bookRepository.GetByIdAsync(id, cancellationToken);
         if (book is null)
         {
             return NotFound(new { message = $"Book with ID '{id}' was not found." });
@@ -161,8 +164,60 @@ public sealed class BooksController(
         return File(stream, "application/pdf", enableRangeProcessing: true);
     }
 
-    private string GetOwnerUserId() =>
-        User.FindFirstValue(ClaimTypes.NameIdentifier)
-        ?? User.FindFirstValue("sub")
-        ?? "development-user";
+    private string GetOwnerUserId()
+    {
+        var claimId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        if (!string.IsNullOrEmpty(claimId))
+        {
+            return claimId;
+        }
+
+        var authHeader = Request.Headers.Authorization.ToString();
+        if (!string.IsNullOrWhiteSpace(authHeader) && authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            var sub = ExtractSubFromJwt(authHeader["Bearer ".Length..].Trim());
+            if (!string.IsNullOrWhiteSpace(sub))
+            {
+                return sub;
+            }
+        }
+
+        if (Request.Query.TryGetValue("token", out var queryToken) && !string.IsNullOrWhiteSpace(queryToken))
+        {
+            var sub = ExtractSubFromJwt(queryToken.ToString().Trim());
+            if (!string.IsNullOrWhiteSpace(sub))
+            {
+                return sub;
+            }
+        }
+
+        return "guest-anonymous";
+    }
+
+    private static string? ExtractSubFromJwt(string token)
+    {
+        var parts = token.Split('.');
+        if (parts.Length != 3)
+        {
+            return null;
+        }
+
+        try
+        {
+            var payloadBase64 = parts[1].Replace('-', '+').Replace('_', '/');
+            switch (payloadBase64.Length % 4)
+            {
+                case 2: payloadBase64 += "=="; break;
+                case 3: payloadBase64 += "="; break;
+            }
+
+            var payloadJson = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(payloadBase64));
+            using var doc = System.Text.Json.JsonDocument.Parse(payloadJson);
+            return doc.RootElement.TryGetProperty("sub", out var subProp) ? subProp.GetString() : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
 }

@@ -115,6 +115,11 @@ public sealed class BookGenerationServiceTests
     {
         private readonly Book _book = initialBook;
 
+        public Task<Book?> GetByIdAsync(Guid bookId, CancellationToken cancellationToken)
+        {
+            return Task.FromResult<Book?>(_book.Id == bookId ? _book : null);
+        }
+
         public Task<Book?> GetByIdAsync(Guid bookId, string ownerUserId, CancellationToken cancellationToken)
         {
             return Task.FromResult<Book?>(_book.Id == bookId && _book.OwnerUserId == ownerUserId ? _book : null);
