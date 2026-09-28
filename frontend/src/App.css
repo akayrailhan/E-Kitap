@@ -14,8 +14,23 @@
 }
 
 .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
     border-bottom: 1px solid var(--line);
     padding-bottom: 24px;
+}
+
+.brand-group {
+    display: flex;
+    align-items: center;
+}
+
+.topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
 }
 
 .brand-mark {
@@ -922,4 +937,254 @@ button {
     .pdf-frame-container {
         height: 420px;
     }
+}
+
+/* SUPABASE AUTH & USER PROFILE */
+.auth-status {
+    display: flex;
+    align-items: center;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 10px 3px 4px;
+    background: #ffffff;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+}
+
+.user-avatar {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.user-email-text {
+    max-width: 140px;
+    overflow: hidden;
+    color: var(--ink);
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.btn-auth-action {
+    padding: 2px 4px;
+    color: var(--muted);
+    background: transparent;
+    border: 0;
+    font-size: 11px;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.btn-auth-action:hover {
+    color: #c02b2b;
+}
+
+.guest-profile {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.guest-badge {
+    padding: 4px 7px;
+    color: var(--muted);
+    background: var(--line);
+    border-radius: 2px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+}
+
+.btn-auth-login {
+    padding: 6px 12px;
+    color: var(--ink);
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .15s;
+}
+
+.btn-auth-login:hover {
+    border-color: var(--ink);
+}
+
+/* AUTH MODAL */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(26, 25, 23, 0.55);
+    backdrop-filter: blur(2px);
+}
+
+.modal-card {
+    width: 100%;
+    max-width: 420px;
+    padding: 32px 28px;
+    background: #ffffff;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font: 600 22px Georgia, serif;
+    color: var(--ink);
+}
+
+.btn-modal-close {
+    padding: 4px 8px;
+    color: var(--muted);
+    background: transparent;
+    border: 0;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.btn-modal-close:hover {
+    color: var(--ink);
+}
+
+.modal-subtitle {
+    margin: 0 0 16px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.demo-credentials-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    margin-bottom: 18px;
+    background: #fbf7f0;
+    border: 1px dashed #d8cebe;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.demo-text span {
+    color: var(--ink);
+    display: block;
+    margin-bottom: 2px;
+}
+
+.demo-creds code {
+    font-size: 11px;
+    padding: 1px 4px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 2px;
+    font-family: monospace;
+}
+
+.btn-demo-fill {
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    background: var(--ink);
+    border: 0;
+    border-radius: 2px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+}
+
+.btn-demo-fill:hover {
+    background: var(--accent);
+}
+
+.modal-alert {
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    border-radius: 2px;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.modal-error {
+    color: #c02b2b;
+    background: #fff0f0;
+    border: 1px solid #f29c9c;
+}
+
+.modal-info {
+    color: #1e7e4e;
+    background: #eefcf4;
+    border: 1px solid #a3e0be;
+}
+
+.modal-form {
+    display: grid;
+    gap: 12px;
+}
+
+.modal-form label {
+    margin-bottom: 2px;
+    font-size: 12px;
+}
+
+.modal-form input {
+    margin-bottom: 8px !important;
+    padding: 10px 12px !important;
+    font-family: inherit !important;
+    font-size: 14px !important;
+    background: var(--paper) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 2px !important;
+}
+
+.modal-form input:focus {
+    border-color: var(--accent) !important;
+}
+
+.btn-modal-submit {
+    margin-top: 8px;
+    width: 100%;
+}
+
+.modal-footer {
+    margin-top: 18px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.btn-link {
+    padding: 0;
+    color: var(--accent);
+    background: transparent;
+    border: 0;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
 }

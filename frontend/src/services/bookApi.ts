@@ -1,4 +1,10 @@
 import type { BookStatusData, BookUploadResponse } from '../types/book'
+import { getAuthToken } from './supabaseClient'
+
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const token = await getAuthToken()
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
 
 export async function uploadBook(bookName: string, files: File[]): Promise<BookUploadResponse> {
   const formData = new FormData()
@@ -7,8 +13,11 @@ export async function uploadBook(bookName: string, files: File[]): Promise<BookU
     formData.append('papers', file)
   })
 
+  const authHeaders = await getAuthHeaders()
+
   const response = await fetch('/api/books', {
     method: 'POST',
+    headers: authHeaders,
     body: formData,
   })
 
@@ -24,8 +33,11 @@ export async function uploadBook(bookName: string, files: File[]): Promise<BookU
 }
 
 export async function createBookPdf(bookId: string): Promise<BookStatusData> {
+  const authHeaders = await getAuthHeaders()
+
   const response = await fetch(`/api/books/${bookId}/create`, {
     method: 'POST',
+    headers: authHeaders,
   })
 
   if (!response.ok) {
@@ -40,7 +52,11 @@ export async function createBookPdf(bookId: string): Promise<BookStatusData> {
 }
 
 export async function getBookStatus(bookId: string): Promise<BookStatusData> {
-  const response = await fetch(`/api/books/${bookId}`)
+  const authHeaders = await getAuthHeaders()
+
+  const response = await fetch(`/api/books/${bookId}`, {
+    headers: authHeaders,
+  })
 
   if (!response.ok) {
     if (response.status === 502) {
@@ -60,4 +76,3 @@ export function getPdfUrl(bookId: string): string {
 export function getPdfDownloadUrl(bookId: string): string {
   return `/api/books/${bookId}/pdf?download=true`
 }
-
