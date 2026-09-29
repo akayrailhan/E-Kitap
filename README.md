@@ -10,10 +10,13 @@ Aynı etkinliğe ait tam 10 adet Word (.docx) bildirisini tek bir PDF e-kitaba d
 - [Veri Modeli (MSSQL & EF Core)](#-veri-modeli-mssql--ef-core)
 - [Dosya Saklama Düzeni & Güvenlik](#-dosya-saklama-düzeni--güvenlik)
 - [Word ve PDF İşleme Akışı](#-word-ve-pdf-işleme-akışı)
+- [İletişim Bilgisi Temizliği ve Testler](#-iletişim-bilgisi-temizliği-ve-testler)
 - [API Uç Noktaları (Endpoints)](#-api-uç-noktaları-endpoints)
 - [Frontend ve Kullanıcı Deneyimi](#-frontend-ve-kullanıcı-deneyimi)
+- [Masaüstü ve Mobil Tasarım Kararları](#-masaüstü-ve-mobil-tasarım-kararları)
 - [Kurulum ve Çalıştırma Kılavuzu](#-kurulum-ve-çalıştırma-kılavuzu)
 - [Birim Testleri](#-birim-testleri)
+- [Bilinen Eksikler ve Sınırlar (Known Limitations)](#-bilinen-eksikler-ve-sınırlar-known-limitations)
 - [Yapay Zekâ (AI) Kullanım Beyanı](#-yapay-zekâ-ai-kullanım-beyanı)
 
 ---
@@ -113,15 +116,52 @@ backend/src/EBook.Api/wwwroot/uploads/
 2. **Metin Ayrıştırma (OpenXML):**
    - Word dosyası açılarak gövde paragrafları (`w:p`) ve metin düğümleri (`w:t`) okunur.
    - Bildiri başlığı: İlk anlamlı paragraf 200 karakterden kısaysa başlık kabul edilir; aksi halde dosya adı başlık olarak atanır.
-3. **Sunucu Taraflı İletişim Bilgisi Temizliği (`ContactSanitizer`):**
-   - E-posta adresleri RFC 5322 uyumlu regex ile tespit edilir ve metinden arındırılır.
-   - Türkiye ve uluslararası telefon numarası formatları (`+90...`, `0(5xx)...`, `(0312)...`, vb.) temizlenir.
-   - Diğer akademik içerik, yazar adları ve metin yapısı aynen korunur.
-4. **QuestPDF ile PDF Derleme:**
+3. **QuestPDF ile PDF Derleme:**
    - **Kapak Sayfası:** Kitap adı ve alt başlık mizanpajı.
    - **İçindekiler (TOC):** Her bildirinin başlığı ve dinamik bölüm bağlantısı (`SectionLink`).
    - **Gerçek Sayfa Numaraları:** QuestPDF'in `BeginPageNumberOfSection` motoru sayesinde içindekiler tablosundaki her başlık, bildirinin başladığı gerçek sayfa numarasıyla eşleşir.
    - **Tutarlı Numaralandırma:** Tüm sayfalarda yalın ve tutarlı sayfa numarası (`1`, `2`, `3`...) alt bilgi olarak yer alır.
+
+---
+
+## 🧹 İletişim Bilgisi Temizliği ve Testler
+
+Vaka şartnamesine göre; Word içeriklerindeki e-posta adresleri ve telefon numaraları nihai PDF'te **kesinlikle görünmemeli**, ancak metin içindeki diğer tüm akademik bilgiler, yazarlar, kurumlar ve bilimsel analizler **asla bozulmadan aynen korunmalıdır**.
+
+### Temizleme Yaklaşımı (`ContactSanitizer`)
+İletişim bilgilerinin ayıklanması sunucu tarafında, yüksek performanslı `.NET 8` kaynak üreticili (`[GeneratedRegex]`) derleme zamanı Regex modelleriyle yürütülür:
+
+1. **E-Posta Temizleme Deseni:**
+   RFC 5322 uyumlu e-posta adresi ayrıştırıcı regex:
+   ```csharp
+   (?<![\w.+-])[\w.!#$%&'*+/=?^`{|}~-]+@[\w](?:[\w-]{0,61}[\w])?(?:\.[\w](?:[\w-]{0,61}[\w])?)+
+   ```
+2. **Telefon Numarası Temizleme Deseni:**
+   Türkiye alan kodlu (`0(5xx)...`, `0312...`, `(0212)...`), uluslararası (`+90...`) ve boşluklu/tireli telefon formatlarını tespit eden regex:
+   ```csharp
+   (?<!\w)(?:\+?\d[\d\s().-]{7,}\d)(?!\w)
+   ```
+
+### Örnek Birim Testleri (`ContactSanitizerTests.cs`)
+Temizleme mantığının metin bütünlüğünü bozmadığı xUnit birim testleriyle doğrulanmıştır:
+
+* **Test 1 — İletişim Bilgisini Temizleme & Çevre Metni Koruma:**
+  ```csharp
+  // Girdi metni:
+  "İletişim: author@example.org, +90 (555) 123-45-67. Yıl: 2026"
+
+  // Çıktı metni (E-posta ve telefon kaldırıldı, çevre metin korundu):
+  "İletişim: , . Yıl: 2026"
+  // Doğrulama: 'author@example.org' ve '555' temizlendi; 'İletişim:' ve 'Yıl: 2026' korundu.
+  ```
+* **Test 2 — İletişim Bilgisi Olmayan Metinlerin Aynen Korunması:**
+  ```csharp
+  // Girdi metni:
+  "Bu paragraf iletişim bilgisi içermez."
+
+  // Çıktı metni (Metin bütünlüğü bozulmadan korundu):
+  "Bu paragraf iletişim bilgisi içermez."
+  ```
 
 ---
 
@@ -158,6 +198,24 @@ React, TypeScript ve Vite ile geliştirilen kullanıcı arayüzü; masaüstü, t
   - Case kuralları gereği kimlik doğrulama zorunlu değildir; varsayılan olarak "Misafir Modu"nda tüm özellikler eksiksiz çalışır.
   - İsteğe bağlı olarak Supabase ile kayıt/giriş yapılabilir (`test@example.com` / `123456` hazır test hesabı entegredir).
 - **Hata Yönetimi:** Anlaşılır hata mesajları, tek tıkla yeniden deneme (`Retry`) ve yeni kitap başlatma desteği.
+
+---
+
+### 📱 Masaüstü ve Mobil Tasarım Kararları
+
+1. **Masaüstü Deneyimi (1180px Çift Sütun Izgarası):**
+   - **Giriş ve Düzenleme Aşaması (`.editor-grid`):** Sol sütunda (1.15fr) kitap adı girişi ve sürükle-bırak yükleme alanı yer alırken, sağ sütunda (0.85fr) yüklenen 10 bildirinin sıralama kontrolleri (`▲`, `▼`, `✕`) eşzamanlı izlenir. Kullanıcı iki işlemi tek ekranda kaydırma yapmadan yönetebilir.
+   - **PDF Önizleme Aşaması (`.viewer-grid`):** Sol alanda 780px yüksekliğinde gömülü PDF tarayıcı görüntüleyicisi, sağ alanda ise QuestPDF ile üretilen sayfa numaralarına göre oluşturulmuş tıklanabilir İçindekiler Kenar Çubuğu bulunur.
+
+2. **Mobil / Dar Ekran Deneyimi (720px ve 600px Breakpoint'leri):**
+   - **Dikey Akış Düzeni:** İki sütunlu ızgara, dar ekranlarda dikey tek sütun akışına (`display: block` / `flex-direction: column`) dönüşür. Sürükle-bırak alanı, dosya listesi ve PDF görüntüleyici ekran genişliğini %100 kaplar.
+   - **Dokunmatik Ergonomi (Touch Target):** Sıralama okları, dosya çıkarma butonları ve işlem düğmeleri mobil parmak dokunuşuna uygun olarak minimum 44px dokunma hedefine genişletilmiştir.
+   - **Taşma Önleme:** Sağ üstteki kimlik doğrulama/profil alanı mobil ekranda sayfa başlığının üzerine sağa yaslı akış olarak yerleşir; yatay kaydırma çubuğu oluşması (horizontal scroll) engellenir.
+   - **PDF Görüntüleyici Yüksekliği:** Mobil cihazlarda dikey alanı kilitlememek için iframe yüksekliği 420px-480px bandına çekilmiş, "Yeni Sekmede Aç" ve "PDF İndir" butonları mobil kullanıcılar için tam genişlikte sunulmuştur.
+
+3. **Tipografi ve Editoryal Görsel Dil:**
+   - Kitap ve yayıncılık temasını yansıtan klasik Georgia serif başlıklar ile modern, okunabilir sans-serif (`Trebuchet MS`, `Segoe UI`) gövde metinleri dengelenmiştir.
+   - Okuma yorgunluğunu önleyen yumuşak kağıt dokusu (`--paper: #f7f4ee`), editoryal mürekkep rengi (`--ink: #24201d`) ve yayıncı kiremit vurgusu (`--accent: #c65b2e`) kullanılmıştır.
 
 ---
 
@@ -231,12 +289,25 @@ Tarayıcınızda **`http://localhost:5173`** adresini açarak uygulamayı kullan
 
 ## 🧪 Birim Testleri
 
-Generation servisi durum geçişleri, 10 bildiri validasyonu ve hata yakalama mekanizmaları xUnit ile test edilmiştir:
+Generation servisi durum geçişleri, 10 bildiri validasyonu, iletişim bilgisi temizliği ve hata yakalama mekanizmaları xUnit ile test edilmiştir:
 
 ```bash
 dotnet test backend/EBook.sln
 ```
-* **Kapsam:** 8/8 Birim Testi Başarılı (Status geçişleri, retry mekanizması, 10 dosya kuralı doğrulaması).
+* **Kapsam:** 8/8 Birim Testi Başarılı (Status geçişleri, retry mekanizması, 10 dosya kuralı doğrulaması, ContactSanitizer e-posta/telefon temizliği).
+
+---
+
+## ⚠️ Bilinen Eksikler ve Sınırlar (Known Limitations)
+
+1. **Word Biçim Sadakati (Kapsam Dışı):**
+   Vaka şartnamesinde açıkça ifade edildiği üzere *"kusursuz Word biçim sadakati beklenmez"*. Bu doğrultuda Word belgelerindeki karmaşık tablolar, çizimler, matematiksel formül nesneleri veya gömülü vektör görseller PDF'e aktarılmaz; yalnızca ana metin gövdesi, başlık hiyerarşisi ve temel paragraf yapısı alınarak QuestPDF standardında temiz bir editoryal mizanpaja dönüştürülür.
+2. **Dağıtık Kuyruk Mimarisi (Distributed Queue):**
+   Gereksinimler kapsamında bulut tabanlı kuyruk servisi (RabbitMQ, Kafka, AWS SQS) zorunlu tutulmadığı için PDF üretim iş parçacığı ASP.NET Core `IServiceScopeFactory` ve arka plan `Task.Run` asenkron işleyicisiyle yürütülmektedir. Çok yüksek eşzamanlı istek alan kurumsal ortamlarda Hangfire veya RabbitMQ gibi harici bir kuyruk sistemi entegre edilebilir.
+3. **Bulut Depolama (Cloud Storage):**
+   Dosya saklama yaklaşımı olarak kolaylık ve taşınabilirlik açısından `wwwroot/uploads` tercih edilmiştir. Çok sunuculu (load-balanced) ortamlarda `IFileStorage` arayüzünün AWS S3 veya Azure Blob Storage adaptörüne genişletilmesi gerekir.
+4. **E-Posta Doğrulama & Supabase Limitleri:**
+   Kullanıcı giriş sistemi vaka için zorunlu olmayıp artı özellik olarak entegre edilmiştir. Supabase ücretsiz katmanında saatlik doğrulama e-postası kotası bulunduğundan, değerlendirme sürecini kolaylaştırmak için sistem varsayılan olarak kesintisiz **Misafir Modu**nda çalışır ve hazır demo hesabı (`test@example.com` / `123456`) sağlanmıştır.
 
 ---
 
